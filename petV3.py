@@ -1,0 +1,326 @@
+import re
+from datetime import datetime
+import types
+import telebot
+import time
+import random
+from telebot import types
+import threading
+coudown = 0 #кд сна, влияет на все
+happyn = 0 #счетчик поглаживаний
+voda = 100 #жажда
+eda = 100 #сытость
+power = 100 #сила, тратится на игры, восстанавливается до 100 во время сна
+coudownvoda = 0 #кд до питья
+coudowneda = 0 #кд до приёма пищи
+happy = 100 #счастье
+lock = threading.Lock()
+
+
+
+Bot = telebot.TeleBot('7694811675:AAGY6zPIbmyaRn2kKndq8bTNZ-7owuLrf4s')
+keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+button31 = telebot.types.KeyboardButton(text='игры с кубиком')
+keyboard.add(button31)
+button32 = telebot.types.KeyboardButton(text='покормить')
+keyboard.add(button32)
+button33 = telebot.types.KeyboardButton(text='напоить')
+keyboard.add(button33)
+button33 = telebot.types.KeyboardButton(text='погладить')
+keyboard.add(button33)
+button35 = telebot.types.KeyboardButton(text='уложить спать')
+keyboard.add(button35)
+button135 = telebot.types.KeyboardButton(text='статистика')
+keyboard.add(button135)
+button1235 = telebot.types.KeyboardButton(text='сменить имя')
+keyboard.add(button1235)
+button12325 = telebot.types.KeyboardButton(text='поиграть')
+keyboard.add(button12325)
+users = set()
+
+@Bot.message_handler(commands = ['start'])
+def send_welcome(message):
+    users.add(message.chat.id)
+    Bot.send_message(message.chat.id, 'Привет, я твой питомец!К сожалению, сейчас у меня нет имени, придумай мне имя и напиши!(Подсказка: для корректного имени отправь следующим сообщение только имя питомца без дополнительных символов. Сменить имя питомца можно будет командой *сменить имя*.',reply_markup=keyboard)
+    listid = list(users)
+
+
+
+
+
+def coudowntick():
+    global coudown
+
+    with lock:
+        if coudown > 0:
+            coudown = max(0, coudown - 1)
+
+        if coudown > 0:
+            timer = threading.Timer(1.0, coudowntick)
+            timer.start()
+coudowntick()
+
+def coudownedatick():
+    global coudowneda
+
+
+    with lock:
+        if coudowneda > 0:
+            coudowneda = max(0, coudowneda - 1)
+
+        if coudowneda > 0:
+            timer = threading.Timer(1.0, coudownedatick)
+            timer.start()
+coudownedatick()
+
+def coudownvodatick():
+    global coudownvoda
+    with lock:
+        if coudownvoda > 0:
+            coudownvoda = max(0, coudownvoda - 1)
+
+        if coudownvoda > 0:
+            timer = threading.Timer(1.0, coudownvodatick)
+            timer.start()
+coudownvodatick()
+
+def edatick():
+    global eda
+    if eda <= 20:
+        Bot.send_message(listid[0], "Я проголодался, покорми меня!")
+    with lock:
+        if eda > 0:
+            eda = max(0, eda - 4)
+
+        if eda > 0:
+            timer = threading.Timer(60.0, edatick)
+            timer.start()
+edatick()
+
+def vodatick():
+    global voda
+    if voda <= 20:
+        Bot.send_message(listid[0], "Я хочу пить!")
+    with lock:
+        if voda > 0:
+            voda = max(0, voda - 5)
+
+        if voda > 0:
+            timer = threading.Timer(60.0, vodatick)
+            timer.start()
+vodatick()
+
+def happytick():
+    global happy
+    if happy <= 20:
+        Bot.send_message(listid[0], "Что то мне грустно....")
+
+    with lock:
+        if happy > 0:
+            happy = max(0, happy - 2)
+
+        if happy > 0:
+            timer = threading.Timer(60.0, happytick)
+            timer.start()
+happytick()
+
+def powertick():
+    global power
+
+    if power <= 20:
+        Bot.send_message(listid[0], "Я устал, хотелось бы поспать....")
+
+    with lock:
+        if power > 0:
+            power = max(0, power - 1)
+
+        if power > 0:
+            timer = threading.Timer(10.0, powertick)
+            timer.start()
+powertick()
+
+
+
+
+
+@Bot.message_handler(commands = ['time'])
+def date(message):
+    Bot.send_message(message.chat.id, 'Сейчас '+str(datetime.today ()))
+@Bot.message_handler(commands=['image'])
+def image(message):
+
+
+
+    Bot.send_photo(message.chat.id, 'https://steamuserimages-a.akamaihd.net/ugc/17550910127524998/543783B601D5A853E3F50907B9722A314DFD92B6/?imw=512&amp;imh=320&amp;ima=fit&amp;impolicy=Letterbox&amp;imcolor=%23000000&amp;letterbox=true', caption='Х)')
+
+
+namepet = ''
+
+@Bot.message_handler(content_types = ['text'])
+def parrot(message):
+    global coudown
+    global power
+    global eda
+    global coudowneda
+    global coudownvoda
+    global happy
+    global happyn
+    global voda
+    global namepet
+    text=message.text
+    text = text.casefold()
+    if namepet == '' and text != 'кто ты' and text != 'статистика' and text != 'погладить' and text != 'напоить' and text != 'уложить спать' and text != 'покормить' and text != 'игры с кубиком' and text != 'поиграть' and text != 'сменить имя':
+        namepet = text.capitalize()
+        Bot.send_message(message.chat.id, f"Хорошо, теперь я {namepet} !")
+    elif text == 'сменить имя':
+        namepet = ''
+        Bot.send_message(message.chat.id, 'Напиши, какое имя тебе хотелось бы мне дать.')
+
+
+    elif text=='кто ты':
+
+        Bot.send_message(message.chat.id, f'Я - {namepet} !')
+
+
+
+
+    elif text == 'статистика':
+        Bot.send_message(message.chat.id, f"Имя - {namepet}")
+        Bot.send_message(message.chat.id, f"Оставшееся время сна {coudown}")
+        Bot.send_message(message.chat.id, f"Количество поглаживаний {happyn}")
+        Bot.send_message(message.chat.id, f"Сытость {eda}")
+        Bot.send_message(message.chat.id, f"Жажда {voda}")
+        Bot.send_message(message.chat.id, f"Счастье {happy}")
+        Bot.send_message(message.chat.id, f"Кд до питья {coudownvoda}")
+        Bot.send_message(message.chat.id, f"Кд до приёма пищи {coudowneda}")
+
+    elif text == 'игры с кубиком':
+        if coudown == 0:
+            if power > 15:
+                power -= 15
+
+                keyboard2 = telebot.types.InlineKeyboardMarkup(row_width=3)
+                button7 = telebot.types.InlineKeyboardButton('1', callback_data='1')
+                button2 = telebot.types.InlineKeyboardButton('2', callback_data='2')
+                button3 = telebot.types.InlineKeyboardButton('3', callback_data='3')
+                button4 = telebot.types.InlineKeyboardButton('4', callback_data='4')
+                button5 = telebot.types.InlineKeyboardButton('5', callback_data='5')
+                button6 = telebot.types.InlineKeyboardButton('6', callback_data='6')
+                keyboard2.add(button7, button2, button3, button4, button5, button6)
+                Bot.send_message(message.chat.id, 'Выбирай!', reply_markup=keyboard2)
+                @Bot.callback_query_handler(func=lambda call:call.data in ('1', '2', '3', '4', '5', '6'))
+                def answer(call):
+
+                    value = Bot.send_dice(call.message.chat.id, emoji='🎲').dice.value
+                    time.sleep(4)
+
+                    if str(value)==call.data:
+                        global happy
+                        Bot.send_message(call.message.chat.id, f"Ты выиграл! Текущее настроение {happy}")
+                        happy += 15
+                        happytick()
+
+                    else:
+                        Bot.send_message(call.message.chat.id, 'Не повезло, попробуй еще раз!')
+            else:
+                Bot.send_message(message.chat.id, 'Я устал, хотелось бы поспать....')
+        else:
+            Bot.send_message(message.chat.id, 'Питомец спит и не может играть')
+
+    elif text == 'покормить':
+
+        if coudown == 0:
+
+            if coudowneda == 0:
+
+
+                eda += 70
+                coudowneda += 180 #тут должно быть 1800
+                Bot.send_message(message.chat.id, f"Питомец покормлен, следующий раз через 30 минут. Текущая сытость {eda}")
+                edatick()
+                coudownedatick()
+            else:
+                Bot.send_message(message.chat.id, "Питомец сыт, попробуй потом")
+        else:
+
+            Bot.send_message(message.chat.id, "Питомец спит, попробуй позже")
+
+
+
+    elif text == 'напоить':
+
+        if coudown == 0:
+
+            if coudownvoda == 0:
+
+
+                voda += 50
+                coudownvoda += 180# тут тоже
+                Bot.send_message(message.chat.id, f"Питомец напоен, следующий раз через 30 минут. Текущая жажда {voda}")
+                vodatick()
+                coudownvodatick()
+
+            else:
+                Bot.send_message(message.chat.id, "Питомец сыт, попробуй потом")
+        else:
+            Bot.send_message(message.chat.id, "Питомец спит, попробуй позже")
+
+
+
+    elif text == 'уложить спать':
+
+        if coudown == 0 and eda > 5 or power < 10 and eda > 5:
+
+
+
+            power = 103 #приблизительное значение, потом доделать
+            coudown += 180 #тут должно быть 18к
+            eda -= 5
+            Bot.send_message(message.chat.id, "Питомец спит, проснётся через 5 часов")
+            coudowntick()
+            powertick()
+        else:
+            Bot.send_message(message.chat.id, "Питомец либо уже спит, либо голоден и не может заснуть")
+
+
+
+    elif text == 'погладить':
+
+        if coudown == 0:
+
+            if power > 0:
+
+                happy += 10
+                happytick()
+                happyn += 1
+                Bot.send_message(message.chat.id, f"Вы погладили питомца. Питомец доволен. Великий Китайский партия тоже. Текущее настроение {happy}")
+            
+            else:
+                Bot.send_message(message.chat.id, "Питомец измотан.")
+        else:
+            Bot.send_message(message.chat.id, f'Питомец спит, попробуй через {coudown // 60} минут')
+
+
+    elif text == 'поиграть':
+
+        if coudown == 0:
+
+            if power > 0:
+
+                happy += 30
+                happytick()
+                Bot.send_message(message.chat.id, f"Вы поигрались с питомцем, текущее настроение {happy}")
+            else:
+                Bot.send_message(message.chat.id, "Питомец измотан.")
+        else:
+            Bot.send_message(message.chat.id, f'Питомец спит, попробуй через {coudown // 60} минут')
+
+
+
+
+
+
+
+if __name__ == '__main__':
+    print('Бот запущен...')
+    Bot.infinity_polling() # Позволяет боту работать постоянно [4]
